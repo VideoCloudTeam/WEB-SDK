@@ -18,12 +18,9 @@ angular.module('angularApp')
 
     var _this = this;
     var rtc = new ZjRTC(); // 
-    rtc.simulcast = true;
+    rtc.simulcast = true; //是否开启转发模式
     rtc.clayout = "4:4";
     rtc.isShiTong=false;
-    rtc.smallMaxFrameRate = 19;
-      rtc.smallMaxWidth = 680;
-      rtc.smallMaxHeigh = 520;
     $scope.uuid2Streams = {} // {uuid: stream};
 
     rtc.onSetup = function(stream, pinStatus, conferenceExtension) {
@@ -78,11 +75,11 @@ angular.module('angularApp')
       console.log('uuid: ',uuid, 'stream: ', stream, ' updated');
     }
 
-      var apiServer = "api.51vmr.cn",
+      var apiServer = "vapi.myvmr.cn",
           mcuHost = '',
-          alias = '5000010',
-          password = '',
-          displayName = 'demo';
+          alias = '1061',
+          password = '123456',
+          displayName = 'demo6';
     // rtc.pin = password; // conference password, if it has.
 
     var data = {
