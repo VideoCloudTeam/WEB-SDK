@@ -4,7 +4,7 @@
  参见[Web sdk API](https://dev.myvmr.cn/doc/03_webrtc_video_sdk?t=cn&f=3_API_DOCUMENT)文档
  
 # 问题反馈
-* 任何关于SDK DEMO 2的问题，您可以在[Issues](https://github.com/VideoCloudTeam/WEB-SDK/issues/new)中反馈。
+* 任何关于SDK DEMO 3的问题，您可以在[Issues](https://github.com/VideoCloudTeam/WEB-SDK/issues/new)中反馈。
 
 
 
