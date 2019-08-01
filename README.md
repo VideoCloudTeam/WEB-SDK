@@ -3,14 +3,14 @@
 Web-SDK 是云平台Web端Javascript版本SDK。Web-SDK 可以帮助您在十分钟内快速搭建基于浏览器的音视频应用。Web-SDK 使用WebRTC协议构建音视频通话服务，让您轻松应对一对一、多对多音视频通话及实时数据传输等复杂应用场景。
  
 # 问题反馈
-* 任何关于SDK的问题，您可以在[Issues](https://github.com/zijingcloud/Web-SDK/issues/new)中反馈。
+* 任何关于SDK的问题，您可以在[Issues](https://github.com/VideoCloudTeam/WEB-SDK/issues/new)中反馈。
 
 # 安装
 在html文件中用<script> 引用 vcrtc.js 即可。
 `  <script src="vcrtc.js"></script>`
 
 # 使用
- 参见《Javascript接口API.docx》文档
+ 参见[Web sdk API](https://dev.myvmr.cn/doc/03_webrtc_video_sdk?t=cn&f=3_API_DOCUMENT)文档
 
 # demos使用
 demos下面每个文件夹代表一个Web应用，将应用挂在 Web Server 下，然后直接访问 Web 页面即可。 由于浏览器限制，非localhost域名访问时需要使用 `https://` 方式访问。
