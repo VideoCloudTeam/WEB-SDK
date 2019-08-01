@@ -17,12 +17,10 @@ angular.module('angularApp')
 
         var _this = this;
         var rtc = new ZjRTC(); //
-        var zjReg = new ZjRegister(); // register for receiving incoming call;
         rtc.clayout = "4:4";
         rtc.onSetup = function (stream, pinStatus, conferenceExtension) {
             $timeout(function () {
                 $log.debug('ZjRTC.onSetup', stream, pinStatus, conferenceExtension);
-
                 if (stream) {
                     $('#lvideo')[0].srcObject = stream;
                 }
@@ -49,13 +47,11 @@ angular.module('angularApp')
         };
 
 
-        var apiServer = 'cs.wscde.com',
-            mcuHost = 'ex.wscde.com',
-            alias = '1260',
-            password = '123456',
-            displayName = 'demo';
-        // rtc.pin = password; // conference password, if it has.
-        // zjReg.register(mcuHost, "landongyuan@zijingcloud.com", "landongyuan@1");
+        var apiServer = 'bss.lalonline.cn',
+            mcuHost = '',
+            alias = '7996',
+            password = '224466',
+            displayName = 'demo1';
         var data = {
             joinAccount: alias,
             joinPwd: password,
@@ -74,15 +70,6 @@ angular.module('angularApp')
             .catch(function (err) {
                 alert(`接口异常，请确认您有权访问该接口:${err.config.url}。`);
             })
-
-
-        // 被动入会
-        zjReg.onIncoming = function (msg) {
-            setTimeout(function () {
-                rtc.oneTimeToken = msg.token; // used to pass call token
-                rtc.makeCall(mcuHost, msg.remote_alias + "@" + msg.owner, displayName, null, 'video');
-            },);
-        }
 
         // click enter to conference
         $scope.enterConference = function () {
@@ -108,8 +95,9 @@ angular.module('angularApp')
             console.log(message);
         }
 
-
+        //sdk 异常消息捕获
         rtc.onError = function (msg) {
+
             console.log('onError: ', msg);
         }
         window.onbeforeunload = function () {
