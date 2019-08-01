@@ -17,8 +17,6 @@ angular.module('angularApp')
 
     var _this = this;
     var rtc = new ZjRTC(); // 
-//  rtc.pipEnable = true; // 仅在需要共享文件时设置此项，打开此功能需要额外消耗CPU。
-
     rtc.onSetup = function(stream, pinStatus, conferenceExtension) {
       $timeout(function() {
         $log.debug('ZjRTC.onSetup', stream, pinStatus, conferenceExtension);
@@ -49,11 +47,11 @@ angular.module('angularApp')
 
 
 
-    var apiServer = 'cs.zijingcloud.com',
+    var apiServer = 'vapi.myvmr.cn',
       mcuHost = '',
       alias = '1061',
-      password = '',
-      displayName = 'demo';
+      password = '123456',
+      displayName = 'demo5';
     // rtc.pin = password; // conference password, if it has.
 
     var data = {
@@ -87,16 +85,11 @@ angular.module('angularApp')
 
 
     $scope.resetFileStream = function(){
-      rtc.present(null);
-//    rtc.pipLocalStreamWithStream();
+      rtc.stopShareMp4Video();
     }
     $scope.selectFileStream = function(){
       var file = $('#videoFile')[0].captureStream();
-      //替换主视频流
-      rtc.present('screen_http');
       rtc.shareMp4Video(file);
-      // 确保 rtc.pipEnable 设置为true；
-//    rtc.pipLocalStreamWithStream(file);
     }
 
 
