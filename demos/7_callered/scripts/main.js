@@ -17,7 +17,7 @@ angular.module('angularApp')
 
         var _this = this;
         var rtc = new ZjRTC(); //
-        var zjReg = new ZjRegister(); // register for receiving incoming call;
+        var vcReg = new VCRegister(); // register for receiving incoming call;
         rtc.clayout = "4:4";
         rtc.onSetup = function (stream, pinStatus, conferenceExtension) {
             $timeout(function () {
@@ -49,13 +49,13 @@ angular.module('angularApp')
         };
 
 
-        var apiServer = 'cs.wscde.com',
-            mcuHost = 'ex.wscde.com',
-            alias = '1260',
+        var apiServer = 'vapi.myvmr.cn',
+            mcuHost = 'mcu.myvmr.cn',
+            alias = '1061',
             password = '123456',
-            displayName = 'demo';
+            displayName = 'demo7';
         // rtc.pin = password; // conference password, if it has.
-        // zjReg.register(mcuHost, "landongyuan@zijingcloud.com", "landongyuan@1");
+        vcReg.register(mcuHost, "sdkdemo@myvmr.cn", "sdkdemo1234");
         var data = {
             joinAccount: alias,
             joinPwd: password,
@@ -77,7 +77,7 @@ angular.module('angularApp')
 
 
         // 被动入会
-        zjReg.onIncoming = function (msg) {
+        vcReg.onIncoming = function (msg) {
             setTimeout(function () {
                 rtc.oneTimeToken = msg.token; // used to pass call token
                 rtc.makeCall(mcuHost, msg.remote_alias + "@" + msg.owner, displayName, null, 'video');
@@ -91,23 +91,6 @@ angular.module('angularApp')
         $scope.exitConference = function () {
             rtc.disconnect();
         }
-
-        //屏幕共享
-        $scope.screenShare = function () {
-            rtc.present('screen');
-        }
-        $scope.exitScreenShare = function () {
-            rtc.present(null);
-        }
-        rtc.onScreenshareStopped = function (msg) {
-            console.log('onScreenshareStopped: ', msg);
-        }
-        rtc.onScreenshareMissing = function (msg) {
-            var message = '使用屏幕共享网站需要支持 "https".\n 未检查到屏幕分享插件，请安装:\n https://cs.zijingcloud.com/static/extension/browser.html';
-            alert(message);
-            console.log(message);
-        }
-
 
         rtc.onError = function (msg) {
             console.log('onError: ', msg);
