@@ -1,14 +1,15 @@
 # DEMO 6
 主要是多流模式（视频的合成和解码是有端上处理）的方式加入会议；
 且专属云只能使用多流模式
-切换专属云：
+
+##切换专属云：
 ```javascript 1.8
     rtc.isShiTong=true; //切换为专属云
     //更换 apiService 对接专属云地址 alias会议号 password 入会密码
-    var apiServer = "vapi.myvmr.cn",
+    var apiServer = "xxx.xxx.xx",
               mcuHost = '',
-              alias = '1061',
-              password = '123456',
+              alias = 'xxx',
+              password = '###',
               displayName = 'demo6';
     
 ```
