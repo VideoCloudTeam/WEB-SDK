@@ -1,0 +1,19 @@
+<button ng-click="enterConference()">点击入会</button>
+<button ng-click="exitConference()">结束会议</button>
+<button ng-click="startWiteBoard()">开启白板</button>
+<button ng-click="closeWhiteBoard()">结束白板</button>
+上传白板底图文件 ： <input type="file" name = "file" id = "fileId" />
+<button  type="submit" name = "btn"id = "btnId" ng-click="check()">提交图片</button>
+<h1>local stream</h1>
+<video id="lvideo" muted autoplay playsinline style="max-width: 100%"></video>
+<h1>remote stream</h1>
+<video id="rvideo" muted autoplay playsinline style="max-width: 100%"></video>    
+<audio id="raudio" autoplay  />
+
+
+
+
+<iframe  style="height: 500px;width: 100%;" ng-if="wb_url "
+        frameborder="0"
+        ng-src="{{wb_url}}">
+</iframe>
