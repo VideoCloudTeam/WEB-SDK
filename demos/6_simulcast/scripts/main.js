@@ -20,7 +20,7 @@ angular.module('angularApp')
     var rtc = new ZjRTC(); // 
     rtc.simulcast = true; //是否开启转发模式
     rtc.clayout = "4:4";
-    rtc.isShiTong=false;
+    rtc.isShiTong=true;
     $scope.uuid2Streams = {} // {uuid: stream};
 
     rtc.onSetup = function(stream, pinStatus, conferenceExtension) {
@@ -75,10 +75,10 @@ angular.module('angularApp')
       console.log('uuid: ',uuid, 'stream: ', stream, ' updated');
     }
 
-      var apiServer = "vapi.myvmr.cn",
+      var apiServer = "line2.51vmr.cn",
           mcuHost = '',
-          alias = '1061',
-          password = '123456',
+          alias = '8002571401',
+          password = '8888',
           displayName = 'demo6';
     // rtc.pin = password; // conference password, if it has.
 
@@ -115,6 +115,12 @@ angular.module('angularApp')
     }
     $scope.exitScreenShare = function(){
       rtc.present(null);
+    }
+    //双流接受
+    rtc.onPresentationConnected = function(src){
+        if(src){
+            $('#pvideo')[0].srcObject = src;
+        }
     }
     rtc.onScreenshareStopped = function(msg){
       console.log('onScreenshareStopped: ', msg);
