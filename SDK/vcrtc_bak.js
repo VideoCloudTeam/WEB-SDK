@@ -26343,6 +26343,10 @@ ZjRTCCall.prototype.createScrean = function(screnType,calbak) {
         self.screenStram.addEventListener('inactive', e => {
             let parent = self.parent;
             self.parent.logDebug('screen stream inactive - stop recording!');
+            if(!parent.call){
+                window.postMessage({ type: 'clear_share_button'}, '*');
+                return;
+            }
             self.call_uuid = parent.call.call_uuid;
             if(parent.isShiTong && parent.clayout!="1:7"){
                 parent.clayout="1:7";
@@ -26432,7 +26436,7 @@ ZjRTCCall.prototype.createScrean = function(screnType,calbak) {
                 getScreensStrem(mediastream);
             }).catch(error => {
                 console.log("Unable to acquire screen capture", error);
-                window.postMessage({ type: 'media-devices-error'}, '*');
+                window.postMessage({ type: 'media-devices-error', err: error}, '*');
                 // 清楚屏幕共享数据
                 self.parent.screenshare = null;
             });
@@ -26504,7 +26508,7 @@ ZjRTCCall.prototype.makeCall = function (parent, call_type) {
         self.recv_video = self.parent.recv_video;
     }
 
-    if (call_type == 'screen' && (self.parent.isDesktopClient && self.chrome_ver >= 34) && !self.legacy_screenshare) {
+    if (call_type == 'screen' && ((self.chrome_ver <73 && self.chrome_ver >= 34)||self.parent.isDesktopClient) && !self.legacy_screenshare) {
         self.createScrean(1);
     }  else if(call_type == 'screen' && !self.parent.isDesktopClient && self.chrome_ver >= 73 && !self.legacy_screenshare) {
         // Chrome73自带的视频共享SDK
@@ -27290,17 +27294,17 @@ ZjRTCCall.prototype.pcOfferCreated = function(sdp) {
         } else if (self.presentation_in_main) {
             mutatedOffer.present = 'main';
         }
-        //add by ldy --企业专属云 网络重新链接的时候 calls
         if(self.parent.throwingScreen){
-            console.log("aaaaa");
+            self.parent.onLog("[throwingScreen]::send screen sdp to client.");
             var data= {};
             data["_command"] = "event";
             data["_eventName"] = "calls";
             data["data"] = {"offersdp":mutatedOffer.sdp};
             var json = JSON.stringify(data);
-            self.parent.WebSockettp.send(json);
+            self.parent.WebSocket.send(json);
             return;
         }
+        //add by ldy --企业专属云 网络重新链接的时候 calls
         if(self.parent.isShiTong && (self.parent.isShiTongOnline || self.parent.isshitongChange)){
             //全局唯一清除 断网 和切换摄像头 标示
             delete self.parent.isShiTongOnline;
@@ -27333,21 +27337,54 @@ ZjRTCCall.prototype.setClayout = function(setClayout,uuid){
     uuid = uuid || self.call_uuid;
     self.sendRequest('calls/'+uuid+'/clayout', clayout);
 };
+ZjRTCCall.prototype.sreenProcessAnswer = function(e) {
+    var self = this;
+
+    var msg;
+    try {
+        msg = JSON.parse(e);
+    } catch (SyntaxError) {
+        return self.handleError("[sreenProcessAnswer]::Unexpected Response: " + e.target.status + " " + e.target.statusText);
+    }
+    self.parent.onLog("[sreenProcessAnswer]::Received answer: " ,{'answer': msg.result.sdp});
+    self.call_uuid = msg.result.call_uuid;
+    self.defaultStreamId = sdpTransform.getDefaultStreamId(msg.result.sdp);
+
+    if (self.state != 'DISCONNECTING') {
+        var lines = msg.result.sdp.split('\r\n');
+        lines = self.sdpChangeBW(lines);
+
+        var sdp = lines.join('\r\n');
+
+        if(!self.parent.isShiTong){
+            sdp = self.mutateAnswerSDP(sdp);
+        }
+
+        self.pc.setRemoteDescription(new SessionDescription({ 'type' : 'answer', 'sdp' : sdp }),
+            function () { self.parent.onLog("[sreenProcessAnswer]::Remote description active");
+            },
+            function (err) {
+                if (self.parent.event_error) {
+                    self.parent.event_error(self.pc, self.parent.conference, 'setRemoteDescription', err, sdp);
+                }
+                self.parent.onLog("[sreenProcessAnswer]::Remote description failed", err);
+                self.handleError(err.message);
+            }
+        );
+    }
+};
 ZjRTCCall.prototype.processAnswer = function(e) {
     var self = this;
 
     var msg;
-    if(!self.parent.throwingScreen){
-        try {
-            msg = JSON.parse(e.target.responseText);
-        } catch (SyntaxError) {
-            return self.handleError("Unexpected Response: " + e.target.status + " " + e.target.statusText);
-        }
-        if (e.target.status != 200) {
-            return self.handleError(msg.result || msg.reason);
-        }
+    try {
+        msg = JSON.parse(e.target.responseText);
+    } catch (SyntaxError) {
+        return self.handleError("Unexpected Response: " + e.target.status + " " + e.target.statusText);
     }
-    msg = JSON.parse(e);
+    if (e.target.status != 200) {
+        return self.handleError(msg.result || msg.reason);
+    }
 
     self.parent.onLog("Received answer: " ,{'answer': msg.result.sdp});
     self.call_uuid = msg.result.call_uuid;
@@ -28049,6 +28086,8 @@ function ZjRTC() {
     self.flash = undefined;
     self.error = null;
 
+    self.throwingScreen = false;//投屏的判断
+
     self.onError = null;
     self.onWarn = null;
     self.onSetup = null;
@@ -28175,7 +28214,8 @@ function ZjRTC() {
         ERROR_DISCONNECTED: "你已经断开远程会议",
         ERROR_CONNECTING_PRESENTATION: "演示流不可用",
         ERROR_CONNECTING_SCREENSHARE: "屏幕共享错误",
-        ERROR_CONNECTING: "连接会议服务错误"
+        ERROR_CONNECTING: "连接会议服务错误",
+        ERROR_SOCKET_THROWING: ""
     };
 }
 
@@ -28470,40 +28510,72 @@ ZjRTC.prototype.refreshToken = function() {
         }
     });
 };
-
-ZjRTC.prototype.createEventSourceTp = function(){
+ZjRTC.prototype.throwingScreenOn = function(type){
     var self = this;
-    if(!self.WebSockettp){
-        self.WebSockettp = new ReconnectingWebSocket(`wss://${self.tpnode}`);
+    this.throwingScreen = true;
+    //1 屏幕共享
+    if(type ==1){
+        self.createEventSourceByScreening(function(msg){
+            console.log(msg);
+            if(self.onthrowingScreenMsg){
+                self.onthrowingScreenMsg(msg);
+            }
+            if(msg && msg.type =="open"){
+                self.addCall("screen");
+            }
+
+        });
+    }
+}
+ZjRTC.prototype.throwingScreenOff = function(){
+    var self = this;
+    var selfCall = self.call || self.screenshare;
+    //1 屏幕共享
+    this.throwingScreen = false;
+    if(selfCall){
+        selfCall.cleanup();
+    }
+    if(self.WebSocket){
+        self.WebSocket.close();
     }
 
-    self.WebSockettp.onopen = function(e) {
-        self.onLog("[wss]::event source open");
+}
+ZjRTC.prototype.createEventSourceByScreening = function(cb){
+    var self = this;
+    if(!self.WebSocket){
+        self.WebSocket = new ReconnectingWebSocket(`wss://${self.tpnode}`,null,{maxRetries:10 });
+    }
+    self.WebSocket.onopen = function(e) {
+        self.onLog("[wss]::Screening  event source open");
         self.WebSocketTimeout = 10;
-        self.present('screen');
+        cb && cb(e);
     };
-    self.WebSockettp.onerror = function(e) {
-        self.onLog("[wss]::event source error", e);
+    self.WebSocket.onerror = function(e) {
+        self.onLog("[wss]::Screening  event source error", e);
         if (self.state != 'DISCONNECTING') {
-            self.onLog("[wss]::reconnecting...");
-            if(self.WebSockettp){
-                self.WebSockettp.close();
+            self.onLog("[wss]::Screening  reconnecting...");
+            if(self.WebSocket){
+                self.WebSocket.close();
             }
-            self.WebSockettp = null;
-            if (self.WebSocketTimeout > 15000) {
-                self.error = "[wss]::Error connecting to EventSource";
+            self.WebSocket = null;
+            if (self.WebSocketTimeout > 10000) {
+                self.error = "[wss]::Screening  Error connecting to EventSource";
+                cb && cb(e);
                 return self.onError(self.trans.ERROR_CONNECTING);
             }
-            setTimeout(function() {
-                self.createEventSourceTp();
-            }, self.WebSocketTimeout);
             self.WebSocketTimeout += 1000;
         }
+
     };
-    self.WebSockettp.onclose = function(e) {
-        self.onLog("[wss]::event source onclose", e);
+    self.WebSocket.onclose = function(e) {
+        self.onLog("[wss]::Screening event source onclose", e);
+        if(self.WebSocket){
+            cb && cb(e);
+            self.throwingScreenOff();
+        }
+        self.WebSocket = null;
     };
-    self.WebSockettp.addEventListener('message', function(e) {
+    self.WebSocket.addEventListener('message', function(e) {
         var rawJson = JSON.parse(e.data);
         var msg = null;
 
@@ -28514,16 +28586,16 @@ ZjRTC.prototype.createEventSourceTp = function(){
                     self.onLog("[ws]: answer", msg);
                     var res = {"result":{"sdp":msg.answersdp}};
                     var json = JSON.stringify(res);
-                    self.screenshare.processAnswer(json);
+                    self.screenshare.sreenProcessAnswer(json);
                     break;
-                case 'disconect':
+                case 'disconnect':
                     self.onLog("[ws]:disconect ", msg);
+                    self.WebSocket.close();
                     break;
                 default :
             }
         }
     });
-
 }
 ZjRTC.prototype.createEventSource = function() {
     var self = this;
